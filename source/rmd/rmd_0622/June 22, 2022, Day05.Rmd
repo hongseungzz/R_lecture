@@ -1,0 +1,402 @@
+---
+title: "June 22, 2022, Day05"
+output: 
+  html_document:
+    keep_md: true
+date: '2022-06-22'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## chapter. 7
+
+
+### 라이브러리 불러오기
+```{r}
+# 코드 청크
+library(ggplot2)
+library(data.table)
+library(readxl)
+library(foreign)
+library(dplyr)
+```
+
+### 데이터 불러오기
+  - 데이터를 불러와라
+```{r}
+exam_na <- read.csv("exam_na.csv")
+str(exam_na)
+```
+
+### 결측치 확인 및 빈도 구하기
+  - 결측치: 비어 있는 데이터 값
+  - 결측치 처리 시 우선 고려해야 하는 점: 전체 데이터 중 결측치의 비율
+  - 통계는 실험
+  - 결측치 처리 방법 2가지
+    - 첫째로 평균값을 넣었을 때, 예측 판매량
+    - 둘째로 결측치를 제거할 때, 예측 판매량
+    ⇒ 둘 중 어느 것이 맞는지 실험해 보는 것
+      , 결측치 처리 방법을 선택하는 것은 분석가의 몫
+      
+      즉, 절대적인 정답은 없으며 상황에 따라 
+      더 좋은 결과를 산출해내는 방법을 선택하라
+      
+
+  1) 결측치 확인 : is.na() () 안에검증하려는 데이터세트나 변수이름 입력
+```{r}
+# 예시
+exam_na <- read.csv("exam_na.csv")
+is.na(exam_na)
+```
+  2) 결측치 빈도 구하기 : table(is.na())
+    - table() : 빈도 구하기
+```{r}
+table(is.na(exam_na))
+table(is.na(exam_na$korean))
+summary(is.na(exam_na))   # 데이터세트의 전체 변수별로 결측치 빈도 확인
+summary(exam_na)   # 데이터세트의 전체 변수별 통계치 확인
+```
+
+### 결측치 처리 방법
+  - 제거하고 처리
+  - 다른 값으로 대체(평균 입력 등)    ->    훨씬 더 중요한 방법
+  
+  1) 결측치를 제외하고 분석하기
+  - p.160, 연산함수에서 결측치 제외 명령어 : na.rm = TRUE
+```{r}
+mean(exam_na$korean)
+mean(exam_na$korean, na.rm = TRUE)
+```
+  
+  - 결측치가 있는 행 모두 제외 함수 : na.omit()
+       -> 가급적 쓰지 말것
+```{r}
+na.omit(exam_na)
+```
+
+     
+  - 결측치 없는 행만 추출 : filter()
+```{r}
+exam_na %>% filter(is.na(korean))   # 결측치 있는 행만 추출
+```
+```{r}
+exam_na %>% filter(!is.na(korean))   # 결측치 없는 행 모두 추출
+```
+```{r}
+exam_na %>% filter(is.na(korean) & !is.na(english))
+exam_na %>% filter(!is.na(korean) & !is.na(english))
+exam_na %>% filter(is.na(korean) | !is.na(english))
+exam_na %>% filter(is.na(korean) | is.na(english))
+```
+
+
+
+  2) 결측치를 다른 값으로 대체하기
+  - 교재에 있는 방법 : ifelse() 함수 이용
+```{r}
+exam_na$korean
+
+mean(exam_na$korean, na.rm = TRUE)
+
+exam_na$korean <- ifelse(is.na(exam_na$korean), 90.25, exam_na$korean)
+
+exam_na$korean
+```
+
+  
+  - imputation 참고자료
+  + [A Solution to Missing Data: Imputation Using R](https://www.kdnuggets.com/2017/09/missing-data-imputation-using-r.html)
+  + [R 결측값(NA) 제거, 대체 방법](https://velog.io/@lifeisbeautiful/R-%EA%B2%B0%EC%B8%A1%EA%B0%92NA-%EC%A0%9C%EA%B1%B0-%EB%8C%80%EC%B2%B4-%EB%B0%A9%EB%B2%95)
+    ※ mlbench 패키지 활용
+```{r}
+library(mlbench)
+colSums(is.na(exam_na))    # 결측값 확인
+exam_na2 <- read.csv("exam_na.csv")
+
+exam_na <- exam_na[complete.cases(exam_na2) ,]
+# complete.cases() : 해당되는 행의 결측치를 제거하는 함수
+colSums(is.na(exam_na))
+
+colSums(is.na(exam_na2))
+exam_na2 <- exam_na2 %>% filter(!is.na(korean) & !is.na(english))
+colSums(is.na(exam_na2))
+```
+  
+  
+  
+
+### 이상치
+  - 데이터의 특정 값이 뭔가 '이상'이 있는 상태
+    - case 1 : 정해진 범주에서 벗어난 데이터
+      - ex) 2000년 4월 30일 -> 2000년 40월 30일로 입력한 경우 => 9999로 처리
+    - case 2 : 숫자 / 아웃라이어(outlier) / 극단값
+      - ex) 평균 임금 320만원 / 손흥민의 경우 몇십억원
+
+```{r}
+mpg1_out <- read.csv("mpg1_out.csv")
+```
+```{r}
+table(mpg1_out$trans)
+```
+  - ifelse : 만약 ~라면, 내가 무엇을 할 것이다 <가정법>
+  - 만약 trans의 값이 3이라면, 결측치로 바꿔주세요. 나머지는 그대로 유지하세요.
+```{r}
+mpg1_out$trans <- ifelse(mpg1_out$trans == 3, NA, mpg1_out$trans)
+
+table(is.na(mpg1_out$trans))# 결측치 빈도 확인
+```
+  - 결측치 제거
+```{r}
+result <- mpg1_out %>% filter(!is.na(trans))
+
+table(is.na(result$trans))
+```
+```{r}
+mpg1_out_result <- mpg1_out %>% filter(mpg1_out$trans != 3)
+
+table(is.na(mpg1_out_result$trans))
+
+table(mpg1_out_result$trans)
+```
+
+
+### 극단치 처리
+  - 통계적으로 극단치의 경계값을 구함
+  - 숫자 데이터 boxplot() 
+  - boxplot() 함수를 통해서 극단치가 있는지 없는 확인 가능 
+```{r}
+mpg1 <- read.csv("mpg1.csv")
+
+boxplot(mpg1$cty)
+boxplot(mpg1$cty)$stats
+```
+  - 상자그림 보는 법
+    - 1사분위수에서 3사분위수의 거리 : IQR (상자그림의 높이)
+    - IQR 위쪽 1.5배 지점 : 상위 경계값
+    - IQR 아래쪽 1.5배 지점 : 하위 경계값
+    - 상자그림 위 아래의 직선 : 상/하위 경계 안 최댓값
+    - 상위 경계값 위에 표시된 동그라미 : 극단치
+
+
+
+## chapter. 9
+
+### ggplot2 강의
+  - 데이터 불러오기
+```{r}
+library(ggplot2)
+library(readxl)
+who_disease <- read_xlsx("who_disease.xlsx")
+
+
+ggplot(who_disease, aes(x = year, y = cases)) +
+# ggplot(객체, aes(x = 변수, y = 변수))
+# aes() : 축을 그리는 함수
+  # 그래프 종류
+  geom_point()
+```
+
+  - 옵션 1. 투명도 주기 -> geom_point(alpha = )
+```{r}
+ggplot(who_disease, aes(x = year, y = cases)) +
+  geom_point(alpha = 0.5, size = 5)
+  # geom_point(alpha = 0.5, colour = "#2CF23A", shape = 15, size = 1) -> 다양한 옵션 주기(fill은 point에 적용 불가)
+```
+
+  - colour 입력 위치
+    + geom_point(colour="red")     # 색상값
+    
+    + aes(x, y, colour = 컬럼명)   # 컬럼명
+    
+```{r}
+str(iris)
+ggplot(iris, aes(x = Sepal.Length,
+                 y = Sepal.Width,
+                 colour = Species,
+                 size = Petal.Length)) +
+  geom_point()    # 옵션으로 장난치기
+```
+
+  ※  컬럼 별로 색상이 구분됨
+  
+  
+  - 산점도 : x축 수치형, 연속형 데이터 / y축 수치형, 연속형 데이터
+```{r}
+ggplot(who_disease, aes(x = year, y = cases)) +
+  geom_point(alpha = 0.5)
+# 데이터 가공 -> 데이터 시각화 -> 데이터 재가공 -> 데이터 시각화 무한 반복
+```
+  
+  - 히스토그램 그리기
+  
+    - 예시) 질병 데이터 
+    
+    region = AMR, year = 1980, disease = 백일해(pertussis)
+    cases > 0
+    
+```{r}
+library(dplyr)
+str(who_disease)
+who_disease %>% 
+  filter(region == "AMR",
+         year == 1980,
+         disease == "pertussis",
+         cases > 0) -> data2
+
+ggplot(data2, aes(x = cases)) +
+  geom_histogram()
+
+ggplot(diamonds, aes(x = carat)) +
+  geom_histogram()
+```
+  
+  
+  - 히스토그램 구간 설정하기(분석용) : histogram(binwidth=1개 구간의 크기)
+    
+    - 히스토그램은 기본적으로 x축의 구간을 30개로 나눈다
+    
+    - 구간의 크기를 크거나 작게 하여 그래프의 가독성을 높일 수 있다
+    
+    - 한 구간의 크기가 너무 작으면 그래프가 중간중간이 비고, 너무 크면 히스토그램이     두리뭉실해짐
+```{r}
+# 한 개 구간의 크기 = x축의 전체 범위를 30으로 나누면 알 수 있다
+range(diamonds$carat)
+
+# carat의 한 구간 크기 = (5.01-0.20)/30 = 0.1603333
+
+ggplot(diamonds, aes(x=carat)) +
+  geom_histogram(binwidth = 0.8)
+
+ggplot(diamonds, aes(x=carat)) +
+  geom_histogram(binwidth = 0.009)
+```
+
+
+
+※ 히스토그램 분석 시에는 어디에 분포가 몰려있는지 봐야 한다
+
+   -> 범주형 변수는 히스토그램을 활용할 수 없음
+   
+   
+  - 막대형 그래프 그리기
+```{r}
+ggplot(data2, aes(x = country, y = cases)) +
+  geom_col(fill = "#62FDFF") +
+  # 옵션 입력
+  coord_flip()
+```
+```{r}
+ggplot(who_disease, aes(disease)) +
+  geom_bar()
+
+ggplot(who_disease, aes(region)) +
+  geom_bar()
+```
+    
+
+
+  - 커널 밀도 곡선 : geom_density()
+  
+    - 계단식 그림을 곡선으로 그리는 것
+```{r}
+ggplot(diamonds, aes(x = carat)) +
+  geom_density()
+```
+  
+  
+  - 데이터 2개에 대한 선그래프를 한 화면에 그리기
+```{r}
+ggplot(economics, aes(x = date, y = uempmed)) +
+  geom_line(colour = "yellow")
+    
+ggplot(economics, aes(x = date, y = psavert)) +
+  geom_line()
+
+ggplot() +
+  geom_line(data=economics, aes(x = date, y = uempmed, colour = "red")) +
+  geom_line(data=economics, aes(x = date, y = psavert))
+```
+
+    
+### ggplot() 정교하게 그리기
+  - 산점도 그리기
+```{r}
+ggplot(data = diamonds, aes(x=carat, 
+                           y=price,
+                           col = cut)) +    # col = colour
+  geom_point()
+        
+```
+  
+  
+  - 막대그래프에 2개 범주 내용 반영하기
+```{r}
+ggplot(diamonds, aes(x = color,
+                     fill = cut)) +
+  geom_bar()
+```
+```{r}
+ggplot(diamonds, aes(x = color,
+                     fill = cut)) +
+  geom_bar(position="fill")
+```
+```{r}
+ggplot(diamonds, aes(x = color,
+                     fill = cut)) +
+  geom_bar(position="dodge")
+```
+
+
+  - p.219
+    - 선 그래프에 2개 범주 내용 반영
+```{r}
+leisure <- read.csv("leisure.csv")
+str(leisure)
+```
+```{r}
+ggplot(data=leisure, aes(x=age, y=expense, col = sex)) +
+  geom_line(size = 1.4)
+```
+
+
+  - 막대그래프의 순서 변경
+    - reorder() : 크기 순으로 정렬
+```{r}
+mpg1 <- read.csv("mpg1.csv", stringsAsFactors = F)
+
+# 데이터 가공
+drv_hwy <- mpg1 %>% 
+  group_by(drv) %>% 
+  summarise(mean_hwy = mean(hwy))
+```
+```{r}
+# 기본 그래프
+ggplot(data = drv_hwy, aes(x = drv, y = mean_hwy)) +
+  geom_col()
+
+# 오름차순
+ggplot(data = drv_hwy, aes(x = reorder(drv, mean_hwy), 
+                           y = mean_hwy)) +
+  geom_col()
+
+# 내림차순
+ggplot(data = drv_hwy, aes(x = reorder(drv, -mean_hwy), 
+                           y = mean_hwy)) +
+  geom_col()
+
+# 옵션 - 그래프와 축에 타이틀 입력
+ggplot(data = drv_hwy, aes(x = reorder(drv, -mean_hwy), 
+                           y = mean_hwy)) +
+  geom_col() +
+  labs(
+    title = "제목을 입력하세요",
+    subtitle = "소제목을 입력하세요",
+    x = "x 변수명을 입력하세요",
+    y = "y 변수명을 입력하세요",
+    caption = "데이터 출처를 입력하세요"
+  )
+```
+
+

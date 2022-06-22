@@ -582,6 +582,375 @@ round(0.32051282, 2)</code></pre>
 ##   0.67   0.33</code></pre>
 </div>
 </div>
+<div id="chapter.6" class="section level2">
+<h2>chapter.6</h2>
+<div id="데이터-전처리" class="section level3">
+<h3>데이터 전처리</h3>
+<ul>
+<li>분석 프로세스</li>
+<li>데이터 전처리를 위한 도구: dplyr</li>
+<li>데이터 전처리를 위한 도구: data.table</li>
+</ul>
+<pre><code>## 처리속도 차이
+# dplyr : 10GB 이내
+# data.table: 50GB 이상
+
+# 배움의 측면
+# dplyr -&gt; 매우 쉬움
+# data.table -&gt; 어려움</code></pre>
+<ul>
+<li>라이브러리 불러오기</li>
+</ul>
+<pre class="r"><code># install.packages(&quot;dplyr&quot;)
+library(&quot;dplyr&quot;)   # 마크다운 시에는 필요한 패키지를 모두 별도로 입력해야 함</code></pre>
+<pre><code>## 
+## 다음의 패키지를 부착합니다: &#39;dplyr&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:stats&#39;:
+## 
+##     filter, lag</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     intersect, setdiff, setequal, union</code></pre>
+</div>
+<div id="변수이름-바꾸기" class="section level3">
+<h3>변수이름 바꾸기</h3>
+<ul>
+<li>rename() 함수는 데이터세트에 있는 변수이름을 변경</li>
+</ul>
+<pre class="r"><code>mpg1 &lt;- read.csv(&quot;mpg1.csv&quot;, stringsAsFactors = F)
+
+mpg1_newname1 &lt;- mpg1 %&gt;%  
+    rename(transmission=trans,
+           drive_method=drv,
+           city=cty,
+           highway=hwy)</code></pre>
+<pre class="r"><code>mpg1_newname2 &lt;- rename(mpg1, transmission=trans,
+                        drive_method=drv,
+                        city=cty,
+                        highway=hwy)
+str(mpg1_newname2)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    234 obs. of  5 variables:
+##  $ manufacturer: chr  &quot;audi&quot; &quot;audi&quot; &quot;audi&quot; &quot;audi&quot; ...
+##  $ transmission: chr  &quot;auto&quot; &quot;manual&quot; &quot;manual&quot; &quot;auto&quot; ...
+##  $ drive_method: chr  &quot;f&quot; &quot;f&quot; &quot;f&quot; &quot;f&quot; ...
+##  $ city        : int  18 21 20 21 16 18 18 18 16 20 ...
+##  $ highway     : int  29 29 31 30 26 26 27 26 25 28 ...</code></pre>
+</div>
+<div id="빈도분석-count" class="section level3">
+<h3>빈도분석 : count()</h3>
+<pre><code>count(데이터세트,변수)
+table(데이터세트$변수)</code></pre>
+<pre class="r"><code>count(mpg1,trans)</code></pre>
+<pre><code>##    trans   n
+## 1   auto 157
+## 2 manual  77</code></pre>
+<pre class="r"><code>class(count(mpg1, trans))</code></pre>
+<pre><code>## [1] &quot;data.frame&quot;</code></pre>
+<pre class="r"><code># 데이터 유형은 데이터 프레임
+
+table(mpg1$trans)</code></pre>
+<pre><code>## 
+##   auto manual 
+##    157     77</code></pre>
+<pre class="r"><code>class(table(mpg1$trans))</code></pre>
+<pre><code>## [1] &quot;table&quot;</code></pre>
+<pre class="r"><code>#데이터 유형은 테이블</code></pre>
+</div>
+<div id="데이터세트에서-일부-열-출력하기-select" class="section level3">
+<h3>데이터세트에서 일부 열 출력하기 : select()</h3>
+<ul>
+<li>일부 열 추출하거나 불필요한 열 삭제 시</li>
+</ul>
+<ol style="list-style-type: decimal">
+<li>필요한 열 추출</li>
+</ol>
+<pre class="r"><code>mpg1_1 &lt;- mpg1 %&gt;% select(manufacturer, trans, cty)
+str(mpg1_1)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    234 obs. of  3 variables:
+##  $ manufacturer: chr  &quot;audi&quot; &quot;audi&quot; &quot;audi&quot; &quot;audi&quot; ...
+##  $ trans       : chr  &quot;auto&quot; &quot;manual&quot; &quot;manual&quot; &quot;auto&quot; ...
+##  $ cty         : int  18 21 20 21 16 18 18 18 16 20 ...</code></pre>
+<pre class="r"><code>mpg1_2 &lt;- select(mpg1, manufacturer, trans, cty)
+str(mpg1_2)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    234 obs. of  3 variables:
+##  $ manufacturer: chr  &quot;audi&quot; &quot;audi&quot; &quot;audi&quot; &quot;audi&quot; ...
+##  $ trans       : chr  &quot;auto&quot; &quot;manual&quot; &quot;manual&quot; &quot;auto&quot; ...
+##  $ cty         : int  18 21 20 21 16 18 18 18 16 20 ...</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>불필요한 열 삭제</li>
+</ol>
+<pre class="r"><code>mpg1_type1 &lt;- mpg1 %&gt;% select(-cty,-hwy)
+
+mpg1_type2 &lt;- select(mpg1, -cty, -hwy)
+
+mpg1_type3 &lt;- mpg1 %&gt;% select(-c(cty, hwy))
+
+mpg1_type4 &lt;- select(mpg1, -c(cty, hwy))</code></pre>
+</div>
+<div id="데이터세트에서-행-추출-slice-filter" class="section level3">
+<h3>데이터세트에서 행 추출: slice(), filter()</h3>
+<ol style="list-style-type: decimal">
+<li>행의 일부를 추출 : slice()</li>
+</ol>
+<pre class="r"><code>mpg1 %&gt;% slice(1,4,5)</code></pre>
+<pre><code>##   manufacturer trans drv cty hwy
+## 1         audi  auto   f  18  29
+## 2         audi  auto   f  21  30
+## 3         audi  auto   f  16  26</code></pre>
+<pre class="r"><code>slice(mpg1,1,4,5)</code></pre>
+<pre><code>##   manufacturer trans drv cty hwy
+## 1         audi  auto   f  18  29
+## 2         audi  auto   f  21  30
+## 3         audi  auto   f  16  26</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>조건에 맞는 행 추출: filter()</li>
+</ol>
+<ol style="list-style-type: decimal">
+<li>비교값이 같은 데이터 추출</li>
+</ol>
+<pre class="r"><code>mpg1_hd1 &lt;- mpg1 %&gt;% filter(manufacturer == &quot;hyundai&quot;)
+str(mpg1_hd1)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    14 obs. of  5 variables:
+##  $ manufacturer: chr  &quot;hyundai&quot; &quot;hyundai&quot; &quot;hyundai&quot; &quot;hyundai&quot; ...
+##  $ trans       : chr  &quot;auto&quot; &quot;manual&quot; &quot;auto&quot; &quot;manual&quot; ...
+##  $ drv         : chr  &quot;f&quot; &quot;f&quot; &quot;f&quot; &quot;f&quot; ...
+##  $ cty         : int  18 18 21 21 18 18 19 19 19 20 ...
+##  $ hwy         : int  26 27 30 31 26 26 28 26 29 28 ...</code></pre>
+<pre class="r"><code>mpg1_hd2 &lt;- filter(mpg1, manufacturer == &quot;hyundai&quot;)</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>비교값이 다른 데이터 추출</li>
+</ol>
+<pre class="r"><code>mpg1_hd3 &lt;- mpg1 %&gt;% filter(manufacturer != &quot;hyundai&quot;)
+str(mpg1_hd3)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    220 obs. of  5 variables:
+##  $ manufacturer: chr  &quot;audi&quot; &quot;audi&quot; &quot;audi&quot; &quot;audi&quot; ...
+##  $ trans       : chr  &quot;auto&quot; &quot;manual&quot; &quot;manual&quot; &quot;auto&quot; ...
+##  $ drv         : chr  &quot;f&quot; &quot;f&quot; &quot;f&quot; &quot;f&quot; ...
+##  $ cty         : int  18 21 20 21 16 18 18 18 16 20 ...
+##  $ hwy         : int  29 29 31 30 26 26 27 26 25 28 ...</code></pre>
+<pre class="r"><code>mpg1_hd4 &lt;- filter(mpg1, manufacturer != &quot;hyundai&quot;)</code></pre>
+<ol start="3" style="list-style-type: decimal">
+<li>비교값이 크거나 작은 데이터 추출</li>
+</ol>
+<pre class="r"><code># 비교값이 작은 데이터
+mean(mpg1$cty)</code></pre>
+<pre><code>## [1] 16.85897</code></pre>
+<pre class="r"><code>mpg1_low1 &lt;- mpg1 %&gt;% filter(cty &lt; 16.85897)
+str(mpg1_low1)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    116 obs. of  5 variables:
+##  $ manufacturer: chr  &quot;audi&quot; &quot;audi&quot; &quot;audi&quot; &quot;audi&quot; ...
+##  $ trans       : chr  &quot;auto&quot; &quot;auto&quot; &quot;auto&quot; &quot;manual&quot; ...
+##  $ drv         : chr  &quot;f&quot; &quot;4&quot; &quot;4&quot; &quot;4&quot; ...
+##  $ cty         : int  16 16 15 15 15 16 14 11 14 13 ...
+##  $ hwy         : int  26 25 25 25 24 23 20 15 20 17 ...</code></pre>
+<pre class="r"><code>mpg1_low2 &lt;- filter(mpg1, cty &lt; 16.85897)
+
+mpg1_low3 &lt;- mpg1 %&gt;% filter(cty &lt; mean(cty))</code></pre>
+<pre class="r"><code># 비교값이 작거나 같은 데이터
+quantile(mpg1$cty)</code></pre>
+<pre><code>##   0%  25%  50%  75% 100% 
+##    9   14   17   19   35</code></pre>
+<pre class="r"><code>mpg1_low4 &lt;- mpg1 %&gt;% filter(cty &lt;= 14)
+str(mpg1_low4)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    73 obs. of  5 variables:
+##  $ manufacturer: chr  &quot;chevrolet&quot; &quot;chevrolet&quot; &quot;chevrolet&quot; &quot;chevrolet&quot; ...
+##  $ trans       : chr  &quot;auto&quot; &quot;auto&quot; &quot;auto&quot; &quot;auto&quot; ...
+##  $ drv         : chr  &quot;r&quot; &quot;r&quot; &quot;r&quot; &quot;r&quot; ...
+##  $ cty         : int  14 11 14 13 12 14 11 11 14 11 ...
+##  $ hwy         : int  20 15 20 17 17 19 14 15 17 17 ...</code></pre>
+<pre class="r"><code>mpg1_low5 &lt;- filter(mpg1, cty &lt;= 14)</code></pre>
+<p>-&gt; 이런 식으로 기준이 되는 값을 구한 뒤, 크거나 같은 데이터에도
+filter() 함수를 이용하여 똑같이 적용하면 된다</p>
+<ol start="4" style="list-style-type: decimal">
+<li>복수의 조건을 충족하는 데이터 추출 : &amp; 이용</li>
+</ol>
+<pre><code>1. 조건이 2개일 때 예시
+mpg1_hd3 &lt;- mpg1 %&gt;% filter(manufacturer == &quot;hyundai&quot; &amp; cty &gt;= mean(cty))
+mpg1_hd4 &lt;- filter(mpg1, manufacturer == &quot;hyundai&quot; &amp; cty &gt;= mean(cty))
+
+2. 조건이 3개일 때 예시
+mpg1_hd5 &lt;- mpg1 %&gt;% filter(manufacturer == &quot;hyundai&quot; &amp; trans == &quot;auto&quot; &amp; cty &gt;= median(cty))
+mpg1_hd6 &lt;- filter(mpg1, manufacturer == &quot;hyundai&quot; &amp; trans == &quot;auto&quot; &amp; cty &gt;= mean(cty))</code></pre>
+<ol start="5" style="list-style-type: decimal">
+<li>복수 조건 중 하나라도 충족하는 데이터 추출 : | 이용</li>
+</ol>
+<pre><code>ex. mpg1_j1 &lt;- mpg1 %&gt;% filter(manufacturer == &quot;hyundai | manufacturer == &quot;nissan&quot; | manufacturer == &quot;subaru&quot; | manufacturer == &quot;toyota&quot;)
+  
+    mpg1_j1 &lt;- filter(mpg1, manufacturer == &quot;hyundai | manufacturer == &quot;nissan&quot; | manufacturer == &quot;subaru&quot; | manufacturer == &quot;toyota&quot;)
+    
+&#39;|&#39;로 연결할 내용이 너무 많을 경우 %in% c()를 이용
+ex. mpg1_j3 &lt;- mpg1 %&gt;% filter(manufacturer %in% c(&quot;honda&quot;, &quot;nisasn&quot;, &quot;subaru&quot;, &quot;toyota&quot;))</code></pre>
+<ol start="6" style="list-style-type: decimal">
+<li>열을 추출한 후 조건에 맞는 행 추출</li>
+</ol>
+<pre class="r"><code># 예시
+mpg1_h9 &lt;- mpg1 %&gt;%
+  select(manufacturer, cty) %&gt;% 
+  filter(manufacturer == &quot;hyundai&quot;, cty &gt;= 16.85897)
+str(mpg1_h9)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    13 obs. of  2 variables:
+##  $ manufacturer: chr  &quot;hyundai&quot; &quot;hyundai&quot; &quot;hyundai&quot; &quot;hyundai&quot; ...
+##  $ cty         : int  18 18 21 21 18 18 19 19 19 20 ...</code></pre>
+<pre class="r"><code># 조금 결이 다른 예시(조건 수행 후 열 추출 반복)
+iris %&gt;%
+  # species, setosa, versicolor
+  filter(Species != &quot;virginica&quot;) %&gt;% 
+  select(Sepal.Length, Sepal.Width) %&gt;% 
+  filter(Sepal.Length &gt; 5.0) %&gt;% 
+  mutate(total = Sepal.Length + Sepal.Width) -&gt; data2
+
+str(data2)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    69 obs. of  3 variables:
+##  $ Sepal.Length: num  5.1 5.4 5.4 5.8 5.7 5.4 5.1 5.7 5.1 5.4 ...
+##  $ Sepal.Width : num  3.5 3.9 3.7 4 4.4 3.9 3.5 3.8 3.8 3.4 ...
+##  $ total       : num  8.6 9.3 9.1 9.8 10.1 9.3 8.6 9.5 8.9 8.8 ...</code></pre>
+</div>
+<div id="파생변수-만들기-mutate" class="section level3">
+<h3>파생변수 만들기 : mutate()</h3>
+<ul>
+<li>1개의 파생변수 만들기</li>
+</ul>
+<pre class="r"><code>mpg2 &lt;- mpg1 %&gt;% 
+  mutate(total = cty+hwy)
+
+str(mpg2)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    234 obs. of  6 variables:
+##  $ manufacturer: chr  &quot;audi&quot; &quot;audi&quot; &quot;audi&quot; &quot;audi&quot; ...
+##  $ trans       : chr  &quot;auto&quot; &quot;manual&quot; &quot;manual&quot; &quot;auto&quot; ...
+##  $ drv         : chr  &quot;f&quot; &quot;f&quot; &quot;f&quot; &quot;f&quot; ...
+##  $ cty         : int  18 21 20 21 16 18 18 18 16 20 ...
+##  $ hwy         : int  29 29 31 30 26 26 27 26 25 28 ...
+##  $ total       : int  47 50 51 51 42 44 45 44 41 48 ...</code></pre>
+<pre class="r"><code>mpg1$total &lt;- mpg1$cty + mpg1$hwy
+mpg1$mean &lt;- (mpg1$cty + mpg1$hwy)/2
+
+str(mpg1)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    234 obs. of  7 variables:
+##  $ manufacturer: chr  &quot;audi&quot; &quot;audi&quot; &quot;audi&quot; &quot;audi&quot; ...
+##  $ trans       : chr  &quot;auto&quot; &quot;manual&quot; &quot;manual&quot; &quot;auto&quot; ...
+##  $ drv         : chr  &quot;f&quot; &quot;f&quot; &quot;f&quot; &quot;f&quot; ...
+##  $ cty         : int  18 21 20 21 16 18 18 18 16 20 ...
+##  $ hwy         : int  29 29 31 30 26 26 27 26 25 28 ...
+##  $ total       : int  47 50 51 51 42 44 45 44 41 48 ...
+##  $ mean        : num  23.5 25 25.5 25.5 21 22 22.5 22 20.5 24 ...</code></pre>
+<ul>
+<li>복수의 파생변수 만들기</li>
+</ul>
+<pre class="r"><code>mpg3 &lt;- mpg1 %&gt;% 
+  mutate(total = cty + hwy
+         , mean = (cty+hwy)/2)
+str(mpg3)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    234 obs. of  7 variables:
+##  $ manufacturer: chr  &quot;audi&quot; &quot;audi&quot; &quot;audi&quot; &quot;audi&quot; ...
+##  $ trans       : chr  &quot;auto&quot; &quot;manual&quot; &quot;manual&quot; &quot;auto&quot; ...
+##  $ drv         : chr  &quot;f&quot; &quot;f&quot; &quot;f&quot; &quot;f&quot; ...
+##  $ cty         : int  18 21 20 21 16 18 18 18 16 20 ...
+##  $ hwy         : int  29 29 31 30 26 26 27 26 25 28 ...
+##  $ total       : int  47 50 51 51 42 44 45 44 41 48 ...
+##  $ mean        : num  23.5 25 25.5 25.5 21 22 22.5 22 20.5 24 ...</code></pre>
+</div>
+<div id="집단별-통계량-구하기-group_by-summarise-n" class="section level3">
+<h3>집단별 통계량 구하기 : group_by(), summarise(), n()</h3>
+<ul>
+<li>집단 분류 : group_by() 함수</li>
+</ul>
+<pre class="r"><code>mpg1 %&gt;% group_by(trans)</code></pre>
+<pre><code>## # A tibble: 234 × 7
+## # Groups:   trans [2]
+##    manufacturer trans  drv     cty   hwy total  mean
+##    &lt;chr&gt;        &lt;chr&gt;  &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;dbl&gt;
+##  1 audi         auto   f        18    29    47  23.5
+##  2 audi         manual f        21    29    50  25  
+##  3 audi         manual f        20    31    51  25.5
+##  4 audi         auto   f        21    30    51  25.5
+##  5 audi         auto   f        16    26    42  21  
+##  6 audi         manual f        18    26    44  22  
+##  7 audi         auto   f        18    27    45  22.5
+##  8 audi         manual 4        18    26    44  22  
+##  9 audi         auto   4        16    25    41  20.5
+## 10 audi         manual 4        20    28    48  24  
+## # … with 224 more rows</code></pre>
+<ul>
+<li>집단의 통계 구하기 : summarize() 함수</li>
+</ul>
+<pre class="r"><code># 한 개의 명령을 수행할 때
+mpg1 %&gt;% summarise(m=mean(cty))   # 데이터 프레임 형식으로 출력</code></pre>
+<pre><code>##          m
+## 1 16.85897</code></pre>
+<pre class="r"><code>mean(mpg1$cty)   # 결과를 바로 출력</code></pre>
+<pre><code>## [1] 16.85897</code></pre>
+<pre class="r"><code># 여러 개의 명령을 동시에 수행할 때
+mpg1 %&gt;% summarise(m=mean(cty), s=sum(cty), med=median(cty))</code></pre>
+<pre><code>##          m    s med
+## 1 16.85897 3945  17</code></pre>
+<pre class="r"><code>mpg1 %&gt;% summarise(mean(cty), sum(cty), median(cty))</code></pre>
+<pre><code>##   mean(cty) sum(cty) median(cty)
+## 1  16.85897     3945          17</code></pre>
+<ul>
+<li>집단으로 분류해서 집단별 통계 구하기</li>
+</ul>
+<pre class="r"><code>mpg1 %&gt;% 
+  group_by(trans) %&gt;% 
+  summarise(avg     = mean(cty)
+            , total = sum(cty)
+            , med   = median(cty))</code></pre>
+<pre><code>## # A tibble: 2 × 4
+##   trans    avg total   med
+##   &lt;chr&gt;  &lt;dbl&gt; &lt;int&gt; &lt;int&gt;
+## 1 auto    16.0  2507    16
+## 2 manual  18.7  1438    18</code></pre>
+<pre class="r"><code>mpg1 %&gt;% 
+  group_by(trans, drv) %&gt;% 
+  summarise(avg     = mean(cty)
+            , total = sum(cty))</code></pre>
+<pre><code>## `summarise()` has grouped output by &#39;trans&#39;. You can override using the
+## `.groups` argument.</code></pre>
+<pre><code>## # A tibble: 6 × 4
+## # Groups:   trans [2]
+##   trans  drv     avg total
+##   &lt;chr&gt;  &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;
+## 1 auto   4      13.9  1039
+## 2 auto   f      19.1  1242
+## 3 auto   r      13.3   226
+## 4 manual 4      15.6   437
+## 5 manual f      21.3   875
+## 6 manual r      15.8   126</code></pre>
+<ul>
+<li>집단별 빈도와 비율 구하기<br />
+</li>
+</ul>
+<ol style="list-style-type: decimal">
+<li>분류 집단별 데이터 빈도 구하기 : group_by(변수)+summarise(n()함수)
+-&gt; n() 함수 : 집단의 데이터 숫자를 세어 빈도를 알려주는 함수</li>
+</ol>
+<pre class="r"><code>mpg1 %&gt;% 
+  group_by(trans) %&gt;% 
+  summarise(n=n())      # 변수이름 = n()</code></pre>
+<pre><code>## # A tibble: 2 × 2
+##   trans      n
+##   &lt;chr&gt;  &lt;int&gt;
+## 1 auto     157
+## 2 manual    77</code></pre>
+<pre class="r"><code>mpg1 %&gt;% 
+  group_by(trans, drv) %&gt;% 
+  summarize(avg     = mean(cty)
+            , total = sum(cty)
+            , med   = median(cty)
+            , count = n())</code></pre>
+<pre><code>## `summarise()` has grouped output by &#39;trans&#39;. You can override using the
+## `.groups` argument.</code></pre>
+<pre><code>## # A tibble: 6 × 6
+## # Groups:   trans [2]
+##   trans  drv     avg total   med count
+##   &lt;chr&gt;  &lt;chr&gt; &lt;dbl&gt; &lt;int&gt; &lt;dbl&gt; &lt;int&gt;
+## 1 auto   4      13.9  1039  13      75
+## 2 auto   f      19.1  1242  18      65
+## 3 auto   r      13.3   226  13      17
+## 4 manual 4      15.6   437  15      28
+## 5 manual f      21.3   875  21      41
+## 6 manual r      15.8   126  15.5     8</code></pre>
+</div>
+</div>
 
 
 
