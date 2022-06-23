@@ -2,6 +2,8 @@
 title: "June 22, 2022, Day05"
 output: 
   html_document:
+    toc: true
+    toc_float: true
     keep_md: true
 date: '2022-06-22'
 ---
@@ -208,7 +210,7 @@ ggplot(who_disease, aes(x = year, y = cases)) +
   - colour 입력 위치
     + geom_point(colour="red")     # 색상값
     
-    + aes(x, y, colour = 컬럼명)   # 컬럼명
+    + aes(x, y, colour = 범주형 컬럼명)   # 컬럼명(범주형 중요)
     
 ```{r}
 str(iris)
@@ -259,7 +261,7 @@ ggplot(diamonds, aes(x = carat)) +
     
     - 구간의 크기를 크거나 작게 하여 그래프의 가독성을 높일 수 있다
     
-    - 한 구간의 크기가 너무 작으면 그래프가 중간중간이 비고, 너무 크면 히스토그램이     두리뭉실해짐
+    - 한 구간의 크기가 너무 작으면 그래프가 중간중간이 비고, 너무 크면 히스토그램이 두리뭉실해짐
 ```{r}
 # 한 개 구간의 크기 = x축의 전체 범위를 30으로 나누면 알 수 있다
 range(diamonds$carat)
@@ -315,7 +317,8 @@ ggplot(economics, aes(x = date, y = psavert)) +
   geom_line()
 
 ggplot() +
-  geom_line(data=economics, aes(x = date, y = uempmed, colour = "red")) +
+  geom_line(data=economics, aes(x = date, y = uempmed, colour = "red")) +      
+  # "data=데이터세트"를 반드시 넣어야 함
   geom_line(data=economics, aes(x = date, y = psavert))
 ```
 
