@@ -1,0 +1,318 @@
+---
+title: "June 24, 2022, Day07"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    keep_md: true
+date: '2022-06-24 09:15:30'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+# 코드 청크
+library(ggplot2)
+library(data.table)
+library(readxl)
+library(foreign)
+library(dplyr)
+```
+
+
+## 복습
+  - 통계 검정
+    - 평균 차이 검정 : 수치 데이터 + 범주 데이터(두 그룹)
+      - 분산분석(중급 이상) : 세 그룹 이상 평균 차이 검정
+  
+    - 비율 차이 검정 : 범주 데이터
+    - 상관 관계 : 수치 데이터
+    - 회귀분석
+    
+  - 통계 검정 사전 준비
+    - 분석을 위한 데이터가 적절한지 검정
+    - 등분산 검정, 수치 데이터가 정규분포를 이루는가?(정규성 검정)
+    
+  - 귀무가설, 대립가설 적절하게 설정
+    - 서울의 평균 임금과 부산의 평균 임금이 차이가 있을 것이다
+    - 선행연구 (논문 찾아서 응용)
+    
+  - 테스트
+    - t.test, chisq.test, cor.test
+    - p.value
+      - p.value > 0.05 --> 귀무가설 지지
+      - p.value < 0.05 --> 대립가설 지지
+    
+    
+
+## 회귀의 중요성
+  - 기초통계: 특정한 결과에 영향을 주는 주 요인이 무엇인가를 찾는 것이 회귀
+  - 회귀분석과 종류
+    - 1세대 회귀 방법론 : 다항회귀분석, 다중회귀분석,포아송 회귀분석 etc.
+    - 2세대 회귀 방법론 : 구조방정식
+    
+  - 귀무가설 & 대립가설 존재
+    - 귀무가설 : x(= 독립변수)가 y(= 종속변수)에 영향을 주지 않는다
+    - 대립가설 : x가 y에 영향을 준다
+    
+### 단순회귀분석  
+  - lm(종속변수~독립변수, 데이터세트)
+    - p.value
+    
+```{r}
+RA <- lm(data = mtcars, mpg~disp)
+
+summary(RA)
+```
+  - (intercept)의 Estimate 값 : 절편, 변수의 Estimate 값 : 회귀계수, Pr(>|t|) : 유의수준
+    - 회귀식 : mpg =  + 29.59985-0.04122 x disp
+  - R-squared (결정계수) = 설명력 = 0 ~ 1
+    - 1로 수렴할수록 설명력이 좋다
+  - Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+    - 유의수준 기호 : 유의수준 충족도를 알 수 있는 기호
+
+```
+# 예시
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept) 29.599855   1.229720  24.070  < 2e-16 ***
+  disp        -0.041215   0.004712  -8.747 9.38e-10 ***
+  var1                                     5.42e-9
+  var2                                     0.10
+  var3                                     9.38e-10
+  
+  Residual standard error: 3.251 on 30 degrees of freedom
+  Multiple R-squared:  0.7183,	Adjusted R-squared:  0.709 
+  F-statistic: 76.51 on 1 and 30 DF,  p-value: 9.38e-10
+  
+  ANOVA(분산분석)
+  식1 : y = disp + var1 + var2 + var3
+  식2 : y = disp + var1 + var2
+  
+  컬럼 갯수가 100개
+  - 전진소거법(전진선택법), 후진소거법
+```
+  - 전진소거법(전진선택법)
+    - 절편만 있는 상수모형으로부터 시작해 중요하다고 생각되는 독립변수부터 차례로 모형에 추가하는 방법
+    - 장점 : 이해하기 쉽고 변수의 개수가 많은 경우에도 사용 가능
+    - 단점 : 변수값의 작은 변동에도 결과가 크게 달라져 안정성 부족
+  
+  - 후진소거법
+    - 모든 독립변수를 포함한 모형에서 출발
+    - 가장 적은 영향을 주는 변수부터 하나씩 제거하며 더 이상 제거할 변수가 없을 때까지 진행
+    - 장점 : 전체 변수들의 정보를 이용할 수 있음
+    - 단점 : 변수의 개수가 많으면 사용하기 어려움
+  
+  - 단계선택법
+    - 전진선택법에 의해 변수를 추가하면서 새롭게 추가된 변수에 기반
+    - 기존 변수의 중요도 약화 시 해당변수를 제거
+    - 단계별로 추가 또는제거되는 변수의 여부를 검토하여 더 이상 변경사항이 없을 때까지 진행
+    
+  - 참고 : [YSY 데이터 분석 블로그 : 회귀분석 실습(3) - 변수선택법(R)](https://ysyblog.tistory.com/121)
+
+
+  - 회귀분석 시 고려해야 하는 4가지 사항
+    - p-value 값 : 회귀모형이 적합한가?
+    - 각 변수의 pr(>|t|) 값 : 각 변수들이 어떤 가설을 채택할 수 있는가?
+    - 회귀식
+    - 결정계수
+  
+  
+  - 머신러닝, 인공지능
+    - 주 목적 : 예측
+    - y = ax + b
+    
+
+### 다중회귀분석
+  - 종속변수에 영향을 주는 독립변수가 복수일 때 분석하는 방식
+  - 복수의 독립변수들은 서로 영향을 주면서 종속변수에 영향을 준다
+    - 따라서, 한 독립변수가 종속변수에 미치는 영향력이 단순회기분석을 했을 때와 다중회귀분석을 했을 때 달라진다
+  - 다중회귀분석 : 독립변수들을 '+'로 연결
+
+```{r}
+lm(mpg~disp+hp+wt, data = mtcars)
+
+RA <- lm(mpg~disp+hp+wt, data = mtcars)
+summary(RA)
+```
+
+
+
+## chapter.10
+
+  
+### 공공데이터를 활용한 실제 분석
+  - 분석 전 명심해야 할 5가지 사항
+    - 첫째, 데이터 전처리가 데이터 분석의 7할 이상을 차지한다
+    - 둘째, 분석의 신뢰도를 높이기 위해 통계 분석은 필수다
+    - 셋째, 데이터 분석 방법의 왕도는 없다
+      - 다양한 방식을 적용해보며 자신의 분석 방식을 찾아 적용할 것
+    - 넷째, 관심거리를 찾는 능력이 중요하다
+    - 다섯째, 데이터 분석은 R 수행 전에 머릿속에서 논리로 분석해야 한다
+      - 데이터 분석 역량은 논리적 사고에 있다
+      - 데이터 분석 : 데이터 속에 숨겨진 사실을 찾아내 이야기를 만드는 것
+  
+  
+### 사례 분석
+
+  - 한국인의 정신건강 분석
+```{r}
+library(dplyr)
+library(ggplot2)  
+library(foreign)
+
+mental_health <- read.spss("한국행정연구원_사회통합실태조사_데이터_2019.sav")
+
+class(mental_health)
+
+mental_health <- as.data.frame(mental_health)
+
+class(mental_health)
+
+str(mental_health)
+
+mental_health <- mental_health %>% 
+  select(q32_2, q1_4, q32_1, q34_1, q52, d17, d1, d2, ara) %>% 
+  rename(suicide       = q32_2,
+         satisfaction  = q1_4,
+         loneliness    = q32_1,
+         family_belief = q34_1,
+         wealth        = q52,
+         health        = d17,
+         sex           = d1,
+         age           = d2,
+         area          = ara)
+
+str(mental_health)
+
+table(mental_health$suicide)
+
+table(mental_health$satisfaction)
+
+# 범주이름 변환
+##변수 간 관계를 분석하기 위해 문자에서 숫자로 이름 변환
+mental_health$suicide <- as.integer(mental_health$suicide)
+mental_health$satisfaction<- as.integer(mental_health$satisfaction)
+mental_health$loneliness <- as.integer(mental_health$loneliness)
+mental_health$family_belief <- as.integer(mental_health$family_belief)
+mental_health$wealth <- as.integer(mental_health$wealth)
+mental_health$health <- as.integer(mental_health$health)
+
+table(mental_health$suicide)
+
+table(mental_health$wealth)
+
+table(mental_health$satisfaction)
+
+# satisfaction,wealth 변수는 조사 시에 0~10점으로 조사되었으나 빈도를  확인해보면 1~11로 구성되어 있음
+
+# 정수형 변수로 변환되면서 첫 번째 문항을 1로 시작했기 때문
+
+# 이대로 분석하면 응답내용이 실제보다 1점씩 부풀려지는 오류 발생
+
+# 변수의 범주 숫자에서 1점씩을 빼는 보정작업 진행
+
+mental_health$satisfaction <- mental_health$satisfaction-1
+mental_health$wealth <- mental_health$wealth-1
+
+table(mental_health$wealth)
+table(mental_health$satisfaction)
+
+# 범주이름 변환
+## 범주형으로 분석하면 오류가 발생할 수 있어 범주형에서 문자형으로 변환
+
+mental_health$age <- as.character(mental_health$age)
+mental_health$sex <- as.character(mental_health$sex)
+mental_health$area <- as.character(mental_health$area)
+
+table(mental_health$age)
+table(mental_health$sex)
+table(mental_health$area)
+
+mental_health$age <- ifelse(mental_health$age == "19~29세", "20대",
+      ifelse(mental_health$age == "60~69세", "60대", mental_health$age))
+
+# 결측치 확인
+summary(mental_health)
+
+table(mental_health$satisfaction)
+
+
+# 빈도분석
+mental_health %>% 
+  group_by(sex) %>% 
+  summarise(n=n()) %>%   # sex 변수의 범주별 빈도 구하기
+  mutate(total = sum(n),   # sex 변수의 빈도총계 구하기
+         pct = round(n/total*100,1))   # sex 변수의 범주별비율 구하기
+
+# 교차 분석
+## 성과 연령대의 교차 빈도 구하기
+table(mental_health$sex, mental_health$age)
+
+## 교차 백분율 구하기
+round(prop.table(table(mental_health$sex, mental_health$age),1),1)
+
+round(prop.table(table(mental_health$sex, mental_health$age),1)*100, 1)
+
+## 교차분석 검정
+chisq.test(mental_health$sex, mental_health$age)
+
+
+# 평균분석
+mental_health %>% 
+  summarise(m1=mean(suicide), 
+            m2=mean(satisfaction),
+            m3=mean(loneliness),
+            m4=mean(family_belief),
+            m5=mean(wealth),
+            m6=mean(health))
+
+
+
+# 삶의 만족도와 외로움이 자살충동에 미치는 영향
+RA <- lm(suicide~satisfaction+loneliness, data=mental_health)
+summary(RA)
+
+# 삶의 만족도와 외로움의 상관관계
+cor.test(mental_health$satisfaction, mental_health$loneliness)
+
+# 가족신뢰도, 경제안정도, 건강상태가 삶의 만족도와 외로움에 미치는 영향
+RA <- lm(satisfaction~family_belief+wealth+health, data=mental_health)
+summary(RA)
+
+RA <- lm(loneliness~family_belief+wealth+health, data=mental_health)
+summary(RA)
+
+# 성, 연령, 지역별 삶의 만족도 차이
+## 성별 삶의 만족도 차이 -> 독립표본 t 검정
+t.test(satisfaction~sex, data=mental_health)
+var.test(satisfaction~sex, data=mental_health)
+
+## 연령대별 삶의 만족도 차이 -> 그룹이 5개 -> 평균만 알아보고 비교
+mental_health %>% 
+  group_by(age) %>% 
+  summarise(m=mean(satisfaction)) %>% 
+  arrange(desc(m))   # 평균값을 내림차순으로 정렬
+
+## 지역별 삶의 만족도 분석과 그래프 그리기
+area_mean <- mental_health %>% 
+                group_by(area) %>% 
+                summarize(m=mean(satisfaction)) %>% 
+                arrange(desc(m))
+
+ggplot(area_mean, aes(x=reorder(area,m), y=m)) +
+  geom_col(colour = "#080317",
+           alpha = 0.5,
+           size = 0.01,
+           fill = "#79F04F") +
+  coord_flip() +
+  labs(
+    x = "지역",
+    y = "만족도 평균",
+    title = "지역별 만족도"
+  )
+```
